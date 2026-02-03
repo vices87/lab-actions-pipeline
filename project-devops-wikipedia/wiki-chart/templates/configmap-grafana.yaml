@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: creation-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  creation-dashboard-678.json: |
+    {
+      "title": "FastAPI",
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Users Created",
+          "targets": [
+            { "expr": "users_created_total" }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Posts Created",
+          "targets": [
+            { "expr": "posts_created_total" }
+          ]
+        }
+      ]
+    }
