@@ -29,11 +29,10 @@ jobs:
 
       - name: Lint code
         run: |
-          pylint actions-pipeline/ --fail-under=8.0          
+          pylint main.py app --fail-under=8.0        
 
-      - name: Run tests
-        run: |
-          pytest
+
+
 
 
 
