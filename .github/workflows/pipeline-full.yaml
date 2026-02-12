@@ -23,8 +23,10 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install lint tools
+      - name: Install lint tools and dependencies
         run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
           pip install pylint 
 
       - name: Run lint and format checks
