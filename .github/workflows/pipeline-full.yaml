@@ -1,4 +1,4 @@
-name: Python CI/CD Pipeline
+name: Full ci/cd pipeline
 
 on:
   workflow_dispatch:
