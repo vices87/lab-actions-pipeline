@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wiki-grafana-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: grafana.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: wiki-grafana
+                port:
+                  number: 80
+          - path: /grafana/d/creation-dashboard-678/creation
+            pathType: Prefix
+            backend:
+              service:
+                name: wiki-grafana
+                port:
+                  number: 80
