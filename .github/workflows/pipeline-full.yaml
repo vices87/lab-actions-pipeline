@@ -85,7 +85,7 @@ jobs:
   # Build da imagem, somente se lint, security e tests passarem
   # --------------------------------------------------------
   build-docker:
-#    needs: [lint, security, tests]
+    needs: [lint]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -101,7 +101,7 @@ jobs:
   # Pode ser deploy em staging/prod
   # --------------------------------------------------------
   deploy-eks:
- #   needs: [build-docker]  # só roda se Docker build passar
+    needs: [build-docker]  # só roda se Docker build passar
     runs-on: ubuntu-latest
     steps:
       # --------------------------------------------------------
