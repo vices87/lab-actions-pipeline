@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "wiki-chart.fullname" . }}-fastapi
+  labels:
+    app: {{ include "wiki-chart.fullname" . }}-fastapi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "wiki-chart.fullname" . }}-fastapi
+  template:
+    metadata:
+      labels:
+        app: {{ include "wiki-chart.fullname" . }}-fastapi
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: fastapi
+          image: "{{ .Values.fastapi.image_name }}"
+          imagePullPolicy: "{{ .Values.fastapi.pullPolicy }}"        
+          ports:
+            - containerPort: 80
+          resources:
+{{ toYaml .Values.fastapi.resources | indent 12 }}
+          env:
+            - name: DATABASE_URL
+              value: "{{ .Values.fastapi.database_url }}"
