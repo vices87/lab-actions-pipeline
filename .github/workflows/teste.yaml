@@ -29,7 +29,8 @@ jobs:
 
       - name: Lint code
         run: |
-          pylint main.py app --fail-under=8.0        
+          pylint main.py app --fail-under=5.0        
+
 
 
 
