@@ -9,12 +9,17 @@ on:
 
 jobs:
   ci-cd:
+    #chama o workflow central da org
     uses: org/shared-workflows/.github/workflows/enterprise-pipeline.yml@v1
-
+    
+    #passa as variaveis no repo da aplicacao
     with:
       aws_region: us-east-1
       cluster_name: eks-dev-service-a
       ecr_repository: service-a
+      aws-role-to-assume: arn:aws:iam::111111111111:role/GitHubActionsECRPushRole
+      ecr-repo: 111111111111.dkr.ecr.us-east-1.amazonaws.com/app-a
+
 
     secrets:
       BUILD_AWS_ROLE_ARN: ${{ secrets.BUILD_AWS_ROLE_ARN }}
