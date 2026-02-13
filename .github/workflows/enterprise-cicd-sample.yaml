@@ -1,0 +1,21 @@
+
+#esse aqui tem que ter em todos os repositorios chamando o central da org, é aqui que passa as variaveis
+name: Service A Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  ci-cd:
+    uses: org/shared-workflows/.github/workflows/enterprise-pipeline.yml@v1
+
+    with:
+      aws_region: us-east-1
+      cluster_name: eks-dev-service-a
+      ecr_repository: service-a
+
+    secrets:
+      BUILD_AWS_ROLE_ARN: ${{ secrets.BUILD_AWS_ROLE_ARN }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
