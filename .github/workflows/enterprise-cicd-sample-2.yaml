@@ -1,0 +1,148 @@
+name: Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  # AWS_REGION: us-east-1
+  # ECR_REPOSITORY: myapp
+  # CLUSTER_NAME: my-eks-cluster
+  AWS_REGION: ${{ inputs.aws_region }}
+  CLUSTER_NAME: ${{ inputs.cluster_name }}
+  ECR_REPOSITORY: ${{ inputs.ecr_repository }}
+
+
+jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pylint
+
+      - name: Run lint
+        run: pylint main.py app --fail-under=5.0
+
+  build-and-push:
+    needs: [lint]
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # Assume role 
+      - name: Configure AWS credentials (Build Account)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.BUILD_AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag and push image
+        id: build
+        run: |
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${GITHUB_SHA}
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+  deploy-dev:
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (DEV Account)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region $AWS_REGION \
+            --name $CLUSTER_NAME
+
+      - name: Deploy to DEV
+        run: |
+          kubectl set image deployment/myapp \
+            myapp=${{ needs.build-and-push.outputs.image }}
+
+      - name: Verify rollout
+        run: kubectl rollout status deployment/myapp
+
+  deploy-hml:
+    needs: [deploy-dev]
+    runs-on: ubuntu-latest
+    environment: hml
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (HML Account)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region $AWS_REGION \
+            --name $CLUSTER_NAME
+
+      - name: Deploy to HML
+        run: |
+          kubectl set image deployment/myapp \
+            myapp=${{ needs.build-and-push.outputs.image }}
+
+      - name: Verify rollout
+        run: kubectl rollout status deployment/myapp
+
+
+  deploy-prod:
+    needs: [deploy-hml]
+    runs-on: ubuntu-latest
+    environment: prod  
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (PROD Account)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region $AWS_REGION \
+            --name $CLUSTER_NAME
+
+      - name: Deploy to PROD
+        run: |
+          kubectl set image deployment/myapp \
+            myapp=${{ needs.build-and-push.outputs.image }}
+
+      - name: Verify rollout
+        run: kubectl rollout status deployment/myapp
